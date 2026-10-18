@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; manifest-src 'self'; connect-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Notes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Notes</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="bar">
+    <h1>Notes</h1>
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-write" aria-selected="true" data-view="write">New</button>
+      <button type="button" role="tab" id="tab-read" aria-selected="false" data-view="read">Open</button>
+      <button type="button" role="tab" id="tab-key" aria-selected="false" data-view="key">Key</button>
+    </nav>
+  </header>
+
+  <!-- Write -->
+  <section class="view" id="view-write" role="tabpanel" aria-labelledby="tab-write">
+    <input id="title" class="title" type="text" placeholder="Title" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="120">
+    <textarea id="message" class="body" placeholder="Note" autocomplete="off" spellcheck="true"></textarea>
+    <div class="row">
+      <label for="channel" class="lbl">Send as</label>
+      <select id="channel">
+        <option value="email">Email</option>
+        <option value="sms">Text message</option>
+        <option value="signal">Signal</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="garmin">Garmin Messenger</option>
+        <option value="file">Text document</option>
+      </select>
+    </div>
+    <div class="row">
+      <span id="count" class="muted small"></span>
+      <span class="spacer"></span>
+      <button type="button" id="btn-clear" class="ghost">Clear</button>
+      <button type="button" id="btn-send" class="primary">Send</button>
+    </div>
+    <div id="out" class="out" hidden>
+      <p class="muted small" id="out-note"></p>
+      <div id="out-parts"></div>
+    </div>
+  </section>
+
+  <!-- Read -->
+  <section class="view" id="view-read" role="tabpanel" aria-labelledby="tab-read" hidden>
+    <textarea id="incoming" class="body short" placeholder="Paste a received note here (all parts, any order)" autocomplete="off" spellcheck="false"></textarea>
+    <div class="row">
+      <label class="ghost filebtn">Open file<input type="file" id="file-in" accept=".txt,text/plain" hidden></label>
+      <span class="spacer"></span>
+      <button type="button" id="btn-open" class="primary">Open</button>
+    </div>
+    <article id="opened" class="opened" hidden>
+      <h2 id="opened-title"></h2>
+      <p class="muted small" id="opened-date"></p>
+      <div id="opened-body" class="opened-body"></div>
+      <div class="row"><span class="spacer"></span><button type="button" id="btn-close" class="ghost">Close</button></div>
+    </article>
+  </section>
+
+  <!-- Key -->
+  <section class="view" id="view-key" role="tabpanel" aria-labelledby="tab-key" hidden>
+    <p class="small">Both people must enter the <b>same key</b>. Agree on it in person, never send it with a note. The key is kept only while this screen is open and is wiped when you lock or leave.</p>
+    <div class="row">
+      <input id="key" type="password" placeholder="Shared key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="button" id="btn-show" class="ghost" aria-label="Show key">Show</button>
+    </div>
+    <p id="key-strength" class="small muted"></p>
+    <div class="row">
+      <button type="button" id="btn-gen" class="ghost">Generate key</button>
+      <span class="spacer"></span>
+      <button type="button" id="btn-lock" class="ghost">Lock now</button>
+      <button type="button" id="btn-use" class="primary">Use key</button>
+    </div>
+    <details class="small muted">
+      <summary>How this works</summary>
+      <p>Title and note are encrypted on this device with AES-256-GCM. The key is stretched with PBKDF2-SHA-256 (600,000 rounds) and a fresh random salt for every note. Only the scrambled text leaves the app, so email, text, Garmin, WhatsApp or a file only ever carry ciphertext. Nothing is saved on the device and the app makes no network requests.</p>
+    </details>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</main>
+<script src="crypto.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
