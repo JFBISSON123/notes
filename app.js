@@ -70,8 +70,9 @@
     document.body.classList.toggle('locked', !session);
     $('tab-key').textContent = session ? 'Key •' : 'Key';
     $('btn-send').textContent = session ? 'Send' : 'Set key';
-    $('btn-lock').hidden = !session;
-    $('btn-use').hidden = !!session;
+    $('key-locked').hidden = !!session;
+    $('key-unlocked').hidden = !session;
+    $('check-code').textContent = session ? session.code : '';
   }
 
   // ---------- key ----------
@@ -81,12 +82,14 @@
     if (C.estimateBits(pass) < 50 && !confirm('This key is weak and could be guessed. Use it anyway?')) return null;
     if (session) session.destroy();
     session = C.createSession(pass);
-    $('key').value = '';
-    $('key').type = 'password'; $('btn-show').textContent = 'Show';
-    $('key-strength').textContent = 'Preparing key…';
+    $('btn-use').disabled = true; $('btn-use').textContent = 'Preparing…';
     try { await session.ready; } catch (e) { session = null; $('key-strength').textContent = 'Could not prepare key.'; refreshKeyState(); return null; }
-    $('key-strength').textContent = 'Key set for this session.';
+    finally { $('btn-use').disabled = false; $('btn-use').textContent = 'Use key'; }
+    $('key').value = ''; $('key-strength').textContent = '';
+    $('key').type = 'password'; $('btn-show').textContent = 'Show';
+    $('gen-box').hidden = true; $('gen-words').textContent = '';
     refreshKeyState(); bumpIdle();
+    toast('Key set. Compare the check code with the other person.', 4000);
     return session;
   }
 
@@ -97,16 +100,24 @@
     $('key-strength').textContent = reason || '';
     closeOpened();
     refreshKeyState();
+    show('key');
   }
 
   $('key').addEventListener('input', () => {
     const v = $('key').value;
     if (!v) { $('key-strength').textContent = ''; return; }
+    const a = C.analyzeKey(v);
+    if (a.unknown.length) {
+      $('key-strength').textContent = a.unknown.map((w) => '“' + w + '”').join(', ') + (a.unknown.length > 1 ? ' are not key words.' : ' is not a key word.') + ' Check the spelling.';
+      return;
+    }
     const bits = C.estimateBits(v);
-    $('key-strength').textContent = bits >= 80 ? 'Strong key.' : bits >= 50 ? 'Fair key. Longer is better.' : 'Weak key. Use Generate key or a long phrase.';
+    const label = a.kind === 'words' ? a.words + ' key words. ' : '';
+    $('key-strength').textContent = label + (bits >= 75 ? 'Strong key.' : bits >= 50 ? 'Fair key. Longer is better.' : 'Weak key. Use Generate key or a long phrase.');
   });
-  $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setKey().then((s) => { if (s) show('write'); }); } });
-  $('btn-use').addEventListener('click', () => setKey().then((s) => { if (s) show('write'); }));
+  $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setKey(); } });
+  $('btn-use').addEventListener('click', () => setKey());
+  $('btn-start').addEventListener('click', () => { show('write'); $('title').focus(); });
   $('btn-show').addEventListener('click', () => {
     const k = $('key');
     k.type = k.type === 'password' ? 'text' : 'password';
@@ -115,9 +126,9 @@
   $('btn-gen').addEventListener('click', () => {
     const k = $('key');
     k.value = C.generateKey(); k.type = 'text'; $('btn-show').textContent = 'Hide';
-    k.dispatchEvent(new Event('input'));
-    $('key-strength').textContent = 'Write this key down and give it to the other person in person. Then tap Use key.';
-    k.focus(); k.select();
+    $('gen-words').textContent = k.value;
+    $('gen-box').hidden = false;
+    $('key-strength').textContent = 'Then tap Use key.';
   });
   $('btn-lock').addEventListener('click', () => lock('Locked.'));
 
@@ -245,6 +256,7 @@
     if (!text.trim()) { toast('Paste a note first'); return; }
     if (!session) { show('key'); toast('Set the shared key first'); return; }
     closeOpened();
+    $('open-error').hidden = true;
     $('btn-open').disabled = true; $('btn-open').textContent = 'Opening…';
     try {
       const n = await session.decrypt(text);
@@ -254,8 +266,17 @@
       $('opened').hidden = false;
       $('incoming').value = '';
     } catch (e) {
-      const why = { key: 'Could not open. Wrong key, a missing part, or the note was changed.', format: 'That does not look like a complete note.', empty: 'Paste a note first', nocompress: 'This browser is too old to open this note.', locked: 'Locked. Set the key again.' };
-      toast(why[e.message] || 'Could not open this note.', 4500);
+      const why = {
+        otherkey: 'This note was made with a different key. Its check code is ' + e.theirs + ', yours is ' + e.mine + '. Agree on the key again in person.',
+        changed: 'Same key, but the note was changed or a part is missing. Ask for it again, with all parts.',
+        key: 'Could not open. Wrong key, a missing part, or the note was changed.',
+        format: 'That does not look like a complete note.',
+        empty: 'Paste a note first.',
+        nocompress: 'This browser is too old to open this note.',
+        locked: 'Locked. Set the key again.'
+      };
+      $('open-error').textContent = why[e.message] || 'Could not open this note.';
+      $('open-error').hidden = false;
     } finally {
       $('btn-open').disabled = false; $('btn-open').textContent = 'Open';
     }
@@ -274,6 +295,7 @@
   // ---------- start ----------
   refreshKeyState();
   updateCount();
+  show('key');
   if (!C.supported()) toast('Open this app over https or from a saved file to enable encryption.', 6000);
 
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

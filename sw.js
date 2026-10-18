@@ -1,6 +1,6 @@
 // Offline cache. Bump VERSION whenever any file changes.
-const VERSION = 'notes-v2';
-const FILES = ['./', 'index.html', 'style.css', 'crypto.js', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const VERSION = 'notes-v3';
+const FILES = ['./', 'index.html', 'style.css', 'words.js', 'crypto.js', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
