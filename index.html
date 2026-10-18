@@ -65,6 +65,7 @@
       <span class="spacer"></span>
       <button type="button" id="btn-open" class="primary">Open</button>
     </div>
+    <p id="open-error" class="small warn" role="alert" hidden></p>
     <article id="opened" class="opened" hidden>
       <h2 id="opened-title"></h2>
       <p class="muted small" id="opened-date"></p>
@@ -75,26 +76,46 @@
 
   <!-- Key -->
   <section class="view" id="view-key" role="tabpanel" aria-labelledby="tab-key" hidden>
-    <p class="small">Both people must enter the <b>same key</b>. Agree on it in person, never send it with a note. The key is kept only while this screen is open and is wiped when you lock or leave.</p>
-    <div class="row">
-      <input id="key" type="password" placeholder="Shared key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <button type="button" id="btn-show" class="ghost" aria-label="Show key">Show</button>
+    <div id="key-locked">
+      <ol class="steps small">
+        <li><b>Get the key.</b> Type the key you both agreed on, or tap Generate key and give the words to the other person face to face.</li>
+        <li><b>Check it.</b> Tap Use key, then compare check codes with the other person. Same code means same key.</li>
+        <li><b>Send.</b> Write on New and tap Send. Read what you receive on Open.</li>
+      </ol>
+      <div class="row">
+        <input id="key" type="password" placeholder="Shared key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <button type="button" id="btn-show" class="ghost" aria-label="Show key">Show</button>
+      </div>
+      <p id="key-strength" class="small muted"></p>
+      <div id="gen-box" class="gen" hidden>
+        <p class="small muted">New key. Write these words down and give them to the other person face to face:</p>
+        <p id="gen-words" class="gen-words"></p>
+      </div>
+      <div class="row">
+        <button type="button" id="btn-gen" class="ghost">Generate key</button>
+        <span class="spacer"></span>
+        <button type="button" id="btn-use" class="primary">Use key</button>
+      </div>
     </div>
-    <p id="key-strength" class="small muted"></p>
-    <div class="row">
-      <button type="button" id="btn-gen" class="ghost">Generate key</button>
-      <span class="spacer"></span>
-      <button type="button" id="btn-lock" class="ghost">Lock now</button>
-      <button type="button" id="btn-use" class="primary">Use key</button>
+    <div id="key-unlocked" hidden>
+      <p class="small muted">Key check code</p>
+      <p id="check-code" class="check"></p>
+      <p class="small">Read this code to the other person. If theirs is the same, you share the same key. If it differs, one of you typed the key differently.</p>
+      <div class="row">
+        <button type="button" id="btn-lock" class="ghost">Lock now</button>
+        <span class="spacer"></span>
+        <button type="button" id="btn-start" class="primary">Write a note</button>
+      </div>
     </div>
     <details class="small muted">
       <summary>How this works</summary>
-      <p>Title and note are encrypted on this device with AES-256-GCM. The key is stretched with PBKDF2-SHA-256 (600,000 rounds) and a fresh random salt for every note. Only the scrambled text leaves the app, so email, text, Garmin, WhatsApp or a file only ever carry ciphertext. Nothing is saved on the device and the app makes no network requests.</p>
+      <p>Title and note are encrypted on this device with AES-256-GCM. The key is stretched with PBKDF2-SHA-256 (600,000 rounds) and a fresh random salt. Only the scrambled text leaves the app, so email, text, Garmin, WhatsApp or a file only ever carry ciphertext. The check code comes from the key through the same slow stretching and does not reveal it. Capitals, extra spaces and dashes in a key do not matter, and key words can be shortened to their first four letters. Nothing is saved on the device and the app makes no network requests.</p>
     </details>
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </main>
+<script src="words.js"></script>
 <script src="crypto.js"></script>
 <script src="app.js"></script>
 </body>
